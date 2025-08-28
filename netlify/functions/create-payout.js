@@ -1,10 +1,8 @@
 const Razorpay = require('razorpay');
 
-// Get your Razorpay keys from Netlify's environment variables
-const { KEY_ID, KEY_SECRET } = process.env;
+// Get all keys from Netlify's environment variables
+const { KEY_ID, KEY_SECRET, RAZORPAYX_ACCOUNT_NUMBER } = process.env;
 
-// IMPORTANT: For Payouts, Razorpay often uses a different instance or setup.
-// This assumes you are using RazorpayX.
 const razorpay = new Razorpay({
     key_id: KEY_ID,
     key_secret: KEY_SECRET
@@ -16,38 +14,36 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, currency, upiId, mode, purpose } = JSON.parse(event.body);
+        const { amount, upiId } = JSON.parse(event.body);
 
-        // Basic validation
         if (!amount || !upiId) {
             return { statusCode: 400, body: 'Missing required fields: amount and upiId.' };
         }
         
-        // In a real app, you would first securely verify this request is from the
-        // legitimate user (e.g., using a Firebase Admin SDK to check their auth token).
-        // Then, you would deduct the token balance from their Firestore document *before*
-        // initiating the payout.
-
+        // --- THIS IS THE FIX ---
+        // The account_number is now read from the secure environment variable.
         const payoutData = {
-            account_number: "RAdVk2QMKX808v", // Your business's payout account
+            account_number: RAZORPAYX_ACCOUNT_NUMBER,
             fund_account: {
                 account_type: "vpa",
                 vpa: {
                     address: upiId
                 },
                 contact: {
-                    // In a real app, you'd fetch this from the user's Firestore profile
-                    name: "Recipient Name" 
+                    name: "Recipient Name" // Placeholder
                 }
             },
-            amount: amount, // Amount in paise
-            currency: currency || "INR",
-            mode: mode || "UPI",
-            purpose: purpose || "payout",
-            queue_if_low_balance: true // Important for reliability
+            amount: amount,
+            currency: "INR",
+            mode: "UPI",
+            purpose: "payout",
+            queue_if_low_balance: true
         };
+        // --- END OF FIX ---
         
         const payout = await razorpay.payouts.create(payoutData);
+        
+        console.log("Payout initiated:", payout);
 
         return {
             statusCode: 200,
@@ -62,7 +58,7 @@ exports.handler = async (event) => {
         return {
             statusCode: 500,
             body: JSON.stringify({
-                error: "Failed to process payout."
+                error: "Failed to process payout. Check server logs."
             })
         };
     }
