@@ -26,8 +26,7 @@ exports.handler = async (event) => {
         const options = {
             amount: amount, // Amount in the smallest currency unit (e.g., paise)
             currency: currency || "INR",
-            receipt: `receipt_order_${new Date().getTime()}`,
-            method: "upi" 
+            receipt: `receipt_order_${new Date().getTime()}`
         };
         
         console.log("Creating Razorpay order with options:", options);
@@ -43,8 +42,7 @@ exports.handler = async (event) => {
             statusCode: 200,
             body: JSON.stringify({
                 orderId: order.id,
-                amount: order.amount,
-                notes: order.notes 
+                amount: order.amount
             })
         };
 
