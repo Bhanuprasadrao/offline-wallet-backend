@@ -1,6 +1,6 @@
 const Razorpay = require('razorpay');
 
-// Get your Razorpay keys from Netlify's environment variables
+// Get keys from Netlify's secure environment variables
 const { KEY_ID, KEY_SECRET } = process.env;
 
 const razorpay = new Razorpay({
@@ -8,33 +8,38 @@ const razorpay = new Razorpay({
     key_secret: KEY_SECRET
 });
 
-// This is the main function that Netlify will run
+// This is the main function Netlify runs for this endpoint
 exports.handler = async (event) => {
-    // Netlify functions are triggered by HTTP requests.
-    // We only accept POST requests for this function.
+    // Only allow POST requests
     if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            body: 'Method Not Allowed'
-        };
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
         const { amount, currency } = JSON.parse(event.body);
 
+        // Basic server-side validation
+        if (!amount || typeof amount !== 'number' || amount <= 0) {
+            return { statusCode: 400, body: 'Invalid amount provided.' };
+        }
+
         const options = {
-            amount: amount, // Amount in the smallest currency unit (paise)
-            currency: currency,
+            amount: amount, // Amount in the smallest currency unit (e.g., paise)
+            currency: currency || "INR",
             receipt: `receipt_order_${new Date().getTime()}`
         };
         
+        console.log("Creating Razorpay order with options:", options);
         const order = await razorpay.orders.create(options);
         
+        if (!order) {
+            console.error("Razorpay order creation returned null.");
+            return { statusCode: 500, body: "Error creating Razorpay order." };
+        }
+        
+        console.log("Successfully created order:", order);
         return {
             statusCode: 200,
-            headers: {
-                "Content-Type": "application/json",
-            },
             body: JSON.stringify({
                 orderId: order.id,
                 amount: order.amount
@@ -42,11 +47,13 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error("Error creating Razorpay order:", error);
+        console.error("--- CREATE ORDER FAILED ---");
+        // Log the detailed error from the Razorpay SDK
+        console.error(error);
         return {
             statusCode: 500,
             body: JSON.stringify({
-                error: "Failed to create payment order."
+                error: "Failed to create payment order. Check server logs for details."
             })
         };
     }
