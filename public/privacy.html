@@ -3,59 +3,106 @@
 <head>
     <title>Privacy Policy - Offline P2P Wallet</title>
      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: auto; color: #333; }
-        .container { padding: 20px; }
-        h1, h2 { color: #1D1B20; }
-        nav { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
-        nav a { margin-right: 15px; text-decoration: none; color: #6750A4; font-weight: 500; }
-        footer { margin-top: 40px; text-align: center; font-size: 0.9em; color: #777; }
-        .contact-info { background-color: #f9f9f9; border-left: 5px solid #6750A4; padding: 20px; margin-top: 20px; }
-    </style>
+        :root {
+            --primary-color: #6750A4;
+            --text-color: #1D1B20;
+            --secondary-text-color: #49454F;
+            --background-color: #FDF7FF;
+            --surface-color: #FFFFFF;
+            --border-color: #e0e0e0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo { font-size: 1.5em; font-weight: bold; }
+        nav a { margin-left: 20px; text-decoration: none; color: var(--secondary-text-color); font-weight: 500; }
+        main { padding: 40px 0; }
+        h1 { font-size: 2.8em; margin-bottom: 20px; color: var(--text-color); }
+        h2 { font-size: 1.8em; margin-bottom: 15px; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; }
+        p { margin-bottom: 20px; }
+        .contact-info {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .contact-info a {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 40px 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+        footer a { color: var(--secondary-text-color); text-decoration: none; margin: 0 10px; }    </style>
 </head>
 <body>
     <div class="container">
-        <header><h1>Privacy Policy</h1></header>
-        <nav>
-            <a href="/">About Us</a> |
-            <a href="/contact.html">Contact Us</a> |
-            <a href="/pricing.html">Pricing</a> |
-            <a href="/privacy.html">Privacy Policy</a> |
-            <a href="/terms.html">Terms & Conditions</a> |
-            <a href="/refunds.html">Cancellation/Refund Policy</a>
-        </nav>
+        <header>
+             <div class="logo"><a href="/" style="text-decoration: none; color: var(--text-color);">Offline P2P Wallet</a></div>
+            <nav>
+                <a href="/#features">Features</a>
+                <a href="/#how-it-works">How It Works</a>
+            </nav>
+        </header>
         <main>
+            <h1>Privacy Policy</h1>
             <p><em>Last Updated: 29 August 2025</em></p>
             
             <h2>1. Introduction</h2>
-            <p>Welcome to Offline P2P Wallet ("we," "our," or "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application (the "App").</p>
+            <p>Offline P2P Wallet ("we," "our," "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application (the "App") and services. Please read this policy carefully. If you do not agree with the terms of this privacy policy, please do not access the application.</p>
             
             <h2>2. Information We Collect</h2>
-            <p>We may collect information about you in a variety of ways. The information we may collect via the App includes:</p>
+            <p>To provide our services, we collect the following types of information:</p>
             <ul>
-                <li><strong>Personal Data:</strong> Personally identifiable information, such as your name, email address, and telephone number, that you voluntarily give to us when you register with the App.</li>
-                <li><strong>Financial Data:</strong> We do not collect or store your sensitive financial information like credit card numbers or UPI PINs. All payments are processed through our secure third-party payment gateway partner (e.g., Razorpay). We only receive a confirmation token that a transaction has been completed.</li>
-                <li><strong>Mobile Device Data:</strong> Device information such as your mobile device ID, model, and manufacturer, as well as Bluetooth name and address, which are necessary for the offline payment functionality.</li>
+                <li><strong>Personal Data:</strong> Personally identifiable information, such as your full name, email address, and telephone number, that you voluntarily provide to us when you register an account with the App.</li>
+                <li><strong>Financial Data:</strong> We do not collect, store, or have access to your sensitive financial details like credit card numbers, CVV, or UPI PINs. All online payments (Top-ups and Withdrawals) are processed through our secure, PCI-DSS compliant third-party payment gateway partners (e.g., Razorpay, Stripe). We only receive a confirmation that a transaction has succeeded or failed.</li>
+                <li><strong>Device and Connection Data:</strong> We collect your device's Bluetooth name and hardware address. This information is essential for the core functionality of enabling offline, peer-to-peer transactions and is only used for this purpose.</li>
+                <li><strong>Transaction Data:</strong> We maintain a secure record of the transactions you make, including the amount, date, time, and the UIDs of the parties involved, for your transaction history and for system reconciliation.</li>
             </ul>
             
-            <h2>3. Use of Your Information</h2>
-            <p>Having accurate information about you permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the App to:</p>
+            <h2>3. How We Use Your Information</h2>
+            <p>We use the information we collect to:</p>
             <ul>
-                <li>Create and manage your account.</li>
-                <li>Process payments and refunds.</li>
-                <li>Enable user-to-user communications.</li>
-                <li>Resolve disputes and troubleshoot problems.</li>
-                <li>Prevent fraudulent transactions.</li>
+                <li>Create and manage your user account.</li>
+                <li>Facilitate and process online and offline transactions.</li>
+                <li>Provide you with your transaction history.</li>
+                <li>Prevent fraudulent activity and enhance the security of our App.</li>
+                <li>Comply with legal and regulatory obligations.</li>
             </ul>
 
             <h2>4. Security of Your Information</h2>
-            <p>We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that no security measures are perfect or impenetrable.</p>
+            <p>We use a combination of administrative, technical, and physical security measures to protect your personal information. Your data is stored on secure servers (e.g., Google Firebase), and all communication between the App and our servers is encrypted. While we have taken all reasonable steps to secure your information, please be aware that no security measures are perfect or impenetrable.</p>
 
-            <h2>5. Contact Us</h2>
-            <p>If you have questions or comments about this Privacy Policy, please contact us at the email provided on our Contact Us page.</p>
         </main>
         <footer>
-            <p>&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>
-        </footer>
+            <div class="footer-links">
+                <a href="/privacy.html">Privacy Policy</a> |
+                <a href="/terms.html">Terms & Conditions</a> |
+                <a href="/refunds.html">Refund Policy</a>
+            </div>
+            <p style="margin-top: 20px;">&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>        </footer>
     </div>
 </body>
 </html>

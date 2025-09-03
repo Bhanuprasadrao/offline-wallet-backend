@@ -3,53 +3,105 @@
 <head>
     <title>Cancellation & Refund Policy - Offline P2P Wallet</title>
      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: auto; color: #333; }
-        .container { padding: 20px; }
-        h1, h2 { color: #1D1B20; }
-        nav { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
-        nav a { margin-right: 15px; text-decoration: none; color: #6750A4; font-weight: 500; }
-        footer { margin-top: 40px; text-align: center; font-size: 0.9em; color: #777; }
-        .contact-info { background-color: #f9f9f9; border-left: 5px solid #6750A4; padding: 20px; margin-top: 20px; }
-    </style>
+        :root {
+            --primary-color: #6750A4;
+            --text-color: #1D1B20;
+            --secondary-text-color: #49454F;
+            --background-color: #FDF7FF;
+            --surface-color: #FFFFFF;
+            --border-color: #e0e0e0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo { font-size: 1.5em; font-weight: bold; }
+        nav a { margin-left: 20px; text-decoration: none; color: var(--secondary-text-color); font-weight: 500; }
+        main { padding: 40px 0; }
+        h1 { font-size: 2.8em; margin-bottom: 20px; color: var(--text-color); }
+        h2 { font-size: 1.8em; margin-bottom: 15px; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; }
+        p { margin-bottom: 20px; }
+        .contact-info {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .contact-info a {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 40px 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+        footer a { color: var(--secondary-text-color); text-decoration: none; margin: 0 10px; }    </style>
 </head>
 <body>
     <div class="container">
-        <header><h1>Cancellation & Refund Policy</h1></header>
-        <nav>
-            <a href="/">About Us</a> |
-            <a href="/contact.html">Contact Us</a> |
-            <a href="/pricing.html">Pricing</a> |
-            <a href="/privacy.html">Privacy Policy</a> |
-            <a href="/terms.html">Terms & Conditions</a> |
-            <a href="/refunds.html">Cancellation/Refund Policy</a>
-        </nav>
+        <header>
+             <div class="logo"><a href="/" style="text-decoration: none; color: var(--text-color);">Offline P2P Wallet</a></div>
+            <nav>
+                <a href="/#features">Features</a>
+                <a href="/#how-it-works">How It Works</a>
+            </nav>
+        </header>
         <main>
-            <p>This policy outlines the terms regarding cancellations and refunds for transactions conducted through the Offline P2P Wallet application.</p>
+            <h1>Cancellation & Refund Policy</h1>
+            <p>This policy outlines the terms regarding cancellations and refunds for all financial transactions conducted through the Offline P2P Wallet application.</p>
 
-            <h3>1. Top-Up Transactions</h3>
+            <h2>1. Top-Up Transactions (Adding Funds)</h2>
             <p>
-                <strong>Final Sale:</strong> When you top up your wallet, you are purchasing digital tokens. This transaction is processed by our third-party payment gateway. Once the payment is successful and tokens are credited to your wallet, the sale is considered final and cannot be cancelled.
+                When you top up your wallet, you are purchasing digital tokens that represent a stored value. This transaction is processed by a secure, third-party payment gateway.
             </p>
-            <p>
-                <strong>No Refunds for Top-Ups:</strong> We do not offer refunds for funds that have been successfully added to your token balance.
-            </p>
+            <ul>
+                <li><strong>Finality:</strong> Once a payment is successfully processed by the gateway and the corresponding tokens are credited to your wallet, the transaction is considered final and complete.</li>
+                <li><strong>No Cancellations or Refunds:</strong> We do not offer cancellations or refunds for funds that have been successfully added to your token balance.</li>
+            </ul>
 
-            <h3>2. Peer-to-Peer (P2P) Transactions</h3>
+            <h2>2. Offline Peer-to-Peer (P2P) Transactions</h2>
             <p>
-                <strong>Irreversible:</strong> All offline P2P transactions of tokens between users are final and irreversible. The system is designed for instant settlement between local wallets. We have no ability to reverse a transaction once you have confirmed it with your PIN. Please ensure all details are correct before sending a payment.
+                All offline P2P transactions involving the transfer of tokens between users are instant and final.
             </p>
+            <ul>
+                <li><strong>Irreversible:</strong> Due to the offline nature of the transaction, once you have confirmed a payment with your PIN and the tokens have been transferred to the recipient's device, we have no technical ability to reverse or recall the transaction. Please verify all details before sending.</li>
+            </ul>
 
-            <h3>3. Withdrawal Transactions</h3>
+            <h2>3. Withdrawal Transactions (Settlement to Bank)</h2>
             <p>
-                <strong>Functionality:</strong> The App allows you to withdraw your available token balance to your linked bank account. This process converts your digital tokens back into real currency.
+                The App allows you to withdraw your available token balance to your linked bank account, converting your digital tokens back into real currency.
             </p>
-            <p>
-                <strong>Finality:</strong> Once a withdrawal request is successfully processed by our payment partners and the funds are sent to your bank account, the transaction is final and cannot be reversed. The corresponding tokens will be permanently debited from your wallet.
-            </p>
+            <ul>
+                <li><strong>Finality:</strong> Once you confirm a withdrawal request and it is successfully processed by our payment partners, the transaction is final and cannot be reversed. The corresponding tokens will be permanently debited from your wallet balance.</li>
+            </ul>
         </main>
         <footer>
-            <p>&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>
-        </footer>
+            <div class="footer-links">
+                <a href="/privacy.html">Privacy Policy</a> |
+                <a href="/terms.html">Terms & Conditions</a> |
+                <a href="/refunds.html">Refund Policy</a>
+            </div>
+            <p style="margin-top: 20px;">&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>        </footer>
     </div>
 </body>
 </html>
