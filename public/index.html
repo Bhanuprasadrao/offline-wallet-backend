@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline P2P Wallet - Secure Offline Payments</title>
     <style>
-        /* Basic CSS for a clean, modern look */
         :root {
             --primary-color: #6750A4;
             --text-color: #1D1B20;
@@ -90,6 +89,13 @@
             font-size: 3em;
             color: var(--primary-color);
         }
+        .pricing-card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
         footer {
             background-color: #f1f1f1;
             padding: 40px 20px;
@@ -110,7 +116,7 @@
             <nav>
                 <a href="#features">Features</a>
                 <a href="#how-it-works">How It Works</a>
-                <a href="#security">Security</a>
+                <a href="#pricing">Pricing</a>
             </nav>
         </header>
 
@@ -120,6 +126,25 @@
             <a href="#" class="cta-button">Coming Soon to Google Play</a>
         </section>
     </div>
+
+        <section id="pricing">
+        <div class="container">
+            <h2 class="section-title">Get Started</h2>
+            <div style="max-width: 500px; margin: auto;">
+                <div class="pricing-card">
+                    <h3>Top-Up Your Wallet</h3>
+                    <p style="font-size: 1.1em; color: var(--secondary-text-color);">
+                        To begin using the offline features, you first need to add funds to your wallet. This is a secure online transaction processed by our payment gateway partner.
+                    </p>
+                    <p style="font-size: 2.5em; font-weight: bold; margin: 20px 0;">
+                        1 Token = ₹1 Rupee
+                    </p>
+                    <p>We accept all major payment methods, including UPI, Debit Cards, and Net Banking.</p>
+                    <a href="#" class="cta-button" style="background-color: #4CAF50;">Top-Up Now (Example)</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section id="features">
         <div class="container">
@@ -163,6 +188,10 @@
             </div>
         </div>
     </section>
+    
+    <!-- START OF NEW, CRITICAL SECTION -->
+
+    <!-- END OF NEW SECTION -->
 
     <section id="security">
         <div class="container">
