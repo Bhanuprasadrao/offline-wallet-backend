@@ -127,20 +127,22 @@
         </section>
     </div>
 
-        <section id="pricing">
+    <section id="pricing">
         <div class="container">
             <h2 class="section-title">Get Started</h2>
             <div style="max-width: 500px; margin: auto;">
                 <div class="pricing-card">
                     <h3>Top-Up Your Wallet</h3>
                     <p style="font-size: 1.1em; color: var(--secondary-text-color);">
-                        To begin using the offline features, you first need to add funds to your wallet. This is a secure online transaction processed by our payment gateway partner.
+                        Experience the top-up process firsthand. Click the button below to initiate a secure test transaction with Razorpay.
                     </p>
                     <p style="font-size: 2.5em; font-weight: bold; margin: 20px 0;">
                         1 Token = ₹1 Rupee
                     </p>
                     <p>We accept all major payment methods, including UPI, Debit Cards, and Net Banking.</p>
-                    <a href="#" class="cta-button" style="background-color: #4CAF50;">Top-Up Now (Example)</a>
+                    
+                    <!-- The button now has an ID so our JavaScript can find it -->
+                    <button id="topUpButton" class="cta-button" style="background-color: #4CAF50;">Top-Up Now (Live Demo)</button>
                 </div>
             </div>
         </div>
@@ -214,6 +216,74 @@
             <p style="margin-top: 20px;">&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>
         </div>
     </footer>
+
+    <script>
+        // Find the button by its ID
+        const topUpButton = document.getElementById('topUpButton');
+
+        topUpButton.addEventListener('click', async () => {
+            // This is the backend URL for our order creation function
+            const createOrderUrl = '/.netlify/functions/create-order';
+
+            // Example amount: 100 Rupees (10000 paise)
+            const orderDetails = {
+                amount: 10000, 
+                currency: 'INR'
+            };
+
+            try {
+                // 1. Call our backend to create a Razorpay Order
+                const response = await fetch(createOrderUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderDetails)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create payment order.');
+                }
+                
+                const data = await response.json();
+                const { orderId, amount } = data;
+
+                // 2. Open the Razorpay Checkout with the order details
+                const options = {
+                    "key": "YOUR_RAZORPAY_TEST_KEY_ID", // Your public Test Key ID
+                    "amount": amount,
+                    "currency": "INR",
+                    "name": "Offline Wallet (Demo)",
+                    "description": "Test Top-Up Transaction",
+                    "order_id": orderId,
+                    "handler": function (response) {
+                        // This function is called on payment success
+                        alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+                        // In a real app, you'd redirect to a success page here.
+                    },
+                    "prefill": {
+                        "name": "Test User",
+                        "email": "test.user@example.com",
+                        "contact": "9999999999"
+                    },
+                    "theme": {
+                        "color": "#6750A4"
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                
+                rzp.on('payment.failed', function (response) {
+                    // This function is called on payment failure
+                    alert("Payment Failed. Code: " + response.error.code + "\nDescription: " + response.error.description);
+                });
+
+                rzp.open();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please check the console.');
+            }
+        });
+    </script>
 
 </body>
 </html>
