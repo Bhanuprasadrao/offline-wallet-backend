@@ -15,13 +15,13 @@ exports.handler = async (event) => {
 
     // Define the CORS headers that give your website permission to call this function.
     const headers = {
-        'Access-Control-Allow-Origin': '*', // Allows any origin
+        'Access-Control-Allow-Origin': '*', // Allows any website to call this function
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'POST, OPTIONS' // Allow POST and preflight OPTIONS requests
     };
 
     // Browsers send a "preflight" OPTIONS request first to ask for permission.
-    // We must handle this and respond with a 204 No Content.
+    // We must handle this and respond with a 204 No Content status.
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 204,
