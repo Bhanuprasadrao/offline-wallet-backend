@@ -219,21 +219,21 @@
     </footer>
 
     <script>
-        // Find the button by its ID
         const topUpButton = document.getElementById('topUpButton');
 
         topUpButton.addEventListener('click', async () => {
-            // This is the backend URL for our order creation function
             const createOrderUrl = '/.netlify/functions/create-order';
-
-            // Example amount: 100 Rupees (10000 paise)
             const orderDetails = {
                 amount: 10000, 
                 currency: 'INR'
             };
+            
+            // Disable the button to prevent multiple clicks
+            topUpButton.disabled = true;
+            topUpButton.textContent = 'Processing...';
 
             try {
-                // 1. Call our backend to create a Razorpay Order
+                // 1. Call our backend
                 const response = await fetch(createOrderUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -241,24 +241,36 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to create payment order.');
+                    throw new Error('Failed to create payment order on the server.');
                 }
                 
                 const data = await response.json();
                 const { orderId, amount } = data;
 
-                // 2. Open the Razorpay Checkout with the order details
+                // 2. Open Razorpay Checkout
+
+                // --- THIS IS THE MOST CRITICAL LINE TO CHECK ---
+                const razorpayKeyId = "YOUR_RAZORPAY_TEST_KEY_ID"; 
+                // ---------------------------------------------
+
+                if (!razorpayKeyId || razorpayKeyId === "YOUR_RAZORPAY_TEST_KEY_ID") {
+                    alert("Razorpay Key ID is not configured in index.html. Please check the file.");
+                    topUpButton.disabled = false;
+                    topUpButton.textContent = 'Top-Up Now (Live Demo)';
+                    return;
+                }
+
                 const options = {
-                    "key": "YOUR_RAZORPAY_TEST_KEY_ID", // Your public Test Key ID
+                    "key": razorpayKeyId,
                     "amount": amount,
                     "currency": "INR",
                     "name": "Offline Wallet (Demo)",
                     "description": "Test Top-Up Transaction",
                     "order_id": orderId,
                     "handler": function (response) {
-                        // This function is called on payment success
                         alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-                        // In a real app, you'd redirect to a success page here.
+                        topUpButton.disabled = false;
+                        topUpButton.textContent = 'Top-Up Now (Live Demo)';
                     },
                     "prefill": {
                         "name": "Test User",
@@ -273,15 +285,18 @@
                 const rzp = new Razorpay(options);
                 
                 rzp.on('payment.failed', function (response) {
-                    // This function is called on payment failure
                     alert("Payment Failed. Code: " + response.error.code + "\nDescription: " + response.error.description);
+                    topUpButton.disabled = false;
+                    topUpButton.textContent = 'Top-Up Now (Live Demo)';
                 });
 
                 rzp.open();
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred. Please check the console.');
+                alert('An error occurred. Please check the browser console for details.');
+                topUpButton.disabled = false;
+                topUpButton.textContent = 'Top-Up Now (Live Demo)';
             }
         });
     </script>
