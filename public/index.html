@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline P2P Wallet - Secure Offline Payments</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --primary-color: #6750A4;
@@ -217,89 +216,7 @@
             <p style="margin-top: 20px;">&copy; 2025 Offline P2P Wallet. All Rights Reserved.</p>
         </div>
     </footer>
-
-    <script>
-        const topUpButton = document.getElementById('topUpButton');
-
-        topUpButton.addEventListener('click', async () => {
-            const createOrderUrl = '/.netlify/functions/create-order';
-            const orderDetails = {
-                amount: 10000, 
-                currency: 'INR'
-            };
-            
-            // Disable the button to prevent multiple clicks
-            topUpButton.disabled = true;
-            topUpButton.textContent = 'Processing...';
-
-            try {
-                // 1. Call our backend
-                const response = await fetch(createOrderUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderDetails)
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to create payment order on the server.');
-                }
-                
-                const data = await response.json();
-                const { orderId, amount } = data;
-
-                // 2. Open Razorpay Checkout
-
-                // --- THIS IS THE MOST CRITICAL LINE TO CHECK ---
-                const razorpayKeyId = "YOUR_RAZORPAY_TEST_KEY_ID"; 
-                // ---------------------------------------------
-
-                if (!razorpayKeyId || razorpayKeyId === "YOUR_RAZORPAY_TEST_KEY_ID") {
-                    alert("Razorpay Key ID is not configured in index.html. Please check the file.");
-                    topUpButton.disabled = false;
-                    topUpButton.textContent = 'Top-Up Now (Live Demo)';
-                    return;
-                }
-
-                const options = {
-                    "key": razorpayKeyId,
-                    "amount": amount,
-                    "currency": "INR",
-                    "name": "Offline Wallet (Demo)",
-                    "description": "Test Top-Up Transaction",
-                    "order_id": orderId,
-                    "handler": function (response) {
-                        alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-                        topUpButton.disabled = false;
-                        topUpButton.textContent = 'Top-Up Now (Live Demo)';
-                    },
-                    "prefill": {
-                        "name": "Test User",
-                        "email": "test.user@example.com",
-                        "contact": "9999999999"
-                    },
-                    "theme": {
-                        "color": "#6750A4"
-                    }
-                };
-                
-                const rzp = new Razorpay(options);
-                
-                rzp.on('payment.failed', function (response) {
-                    alert("Payment Failed. Code: " + response.error.code + "\nDescription: " + response.error.description);
-                    topUpButton.disabled = false;
-                    topUpButton.textContent = 'Top-Up Now (Live Demo)';
-                });
-
-                rzp.open();
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please check the browser console for details.');
-                topUpButton.disabled = false;
-                topUpButton.textContent = 'Top-Up Now (Live Demo)';
-            }
-        });
-    </script>
+    
 
 </body>
 </html>
