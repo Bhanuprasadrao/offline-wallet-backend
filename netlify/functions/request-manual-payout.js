@@ -3,7 +3,7 @@
 const https = require('https');
 // ----------------------------
 
-const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN } = process.env;
+const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN, YOUR_UPI_ID, YOUR_NAME} = process.env;
 
 // This helper function sends the notification to your phone.
 function sendPushoverNotification(title, message, url) {
@@ -61,16 +61,16 @@ exports.handler = async (event) => {
     try {
         const { amount, upiId, name } = JSON.parse(event.body);
 
-        if (!amount || !upiId || !name) {
+        if (!amount || !upiId || !name || !YOUR_UPI_ID || !YOUR_NAME) {
             return { statusCode: 400, body: 'Missing required fields.' };
         }
         
         const amountInRupees = amount / 100.0;
         
         // Create the complete and compliant UPI deeplink.
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal Payout`;        
-        const notificationTitle = `Withdrawal Request: ₹${amountInRupees}`;
-        const notificationMessage = `Tap to pay ${name} (${upiId}).`;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal Approval&mode=04&purpose=00&cuid=${YOUR_UPI_ID}&cuname=${encodeURIComponent(YOUR_NAME)}`;        
+        const notificationTitle = `Approval Request: ₹${amountInRupees}`;
+        const notificationMessage = `Tap to request withdrawal approval from ${name}.`;
         
         // Send the notification to your phone.
         await sendPushoverNotification(notificationTitle, notificationMessage, upiLink);
@@ -78,7 +78,7 @@ exports.handler = async (event) => {
         // Respond to the user's app.
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
+            body: JSON.stringify({ message: "Withdrawal request has been sent for operator approval." })
         };
 
     } catch (error) {
