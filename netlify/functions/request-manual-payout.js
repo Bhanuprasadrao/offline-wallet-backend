@@ -1,7 +1,57 @@
+// --- THIS IS THE PRIMARY FIX ---
+// The module name is 'https', without any extra characters.
 const https = require('https');
+// ----------------------------
+
 const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN } = process.env;
 
-// (The sendPushoverNotification helper function remains the same)
+// This helper function sends the notification to your phone.
+function sendPushoverNotification(title, message, url) {
+    return new Promise((resolve, reject) => {
+        // Double-check that the required environment variables are present.
+        if (!PUSHOVER_API_TOKEN || !PUSHOVER_USER_KEY) {
+            return reject("Pushover API Token or User Key is not configured on the server.");
+        }
+
+        const payload = JSON.stringify({
+            token: PUSHOVER_API_TOKEN,
+            user: PUSHOVER_USER_KEY,
+            title: title,
+            message: message,
+            url: url,
+            url_title: "Tap to Pay in UPI App"
+        });
+
+        const options = {
+            hostname: 'api.pushover.net',
+            path: '/1/messages.json',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            if (res.statusCode === 200) {
+                resolve();
+            } else {
+                let errorData = '';
+                res.on('data', (d) => {
+                    errorData += d;
+                });
+                res.on('end', () => {
+                    console.error('Pushover error response:', errorData);
+                    reject(`Pushover request failed with status: ${res.statusCode}`);
+                });
+            }
+        });
+        req.on('error', (e) => reject(e));
+        req.write(payload);
+        req.end();
+    });
+}
+
 
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
@@ -16,24 +66,19 @@ exports.handler = async (event) => {
         }
         
         const amountInRupees = amount / 100.0;
-        
-        // --- THIS IS THE CRITICAL FIX ---
-        // 1. Define Your Merchant Category Code (MCC).
-        // For a digital wallet / financial service, '6012' is a standard code.
-        const merchantCategoryCode = "6012";
-
-        // 2. Generate a unique Transaction Reference ID.
+        const merchantCategoryCode = "6012"; // Standard code for Financial Institutions
         const transactionRefId = `WDWL-${new Date().getTime()}`;
         
-        // 3. Create the complete and compliant UPI deeplink.
+        // Create the complete and compliant UPI deeplink.
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal&tr=${transactionRefId}&mc=${merchantCategoryCode}`;
-        // --- END OF THE FIX ---
         
         const notificationTitle = `Withdrawal Request: ₹${amountInRupees}`;
-        const notificationMessage = `Request from ${name} (${upiId}). Tap link to pay. Ref: ${transactionRefId}`;
+        const notificationMessage = `Request from ${name} (${upiId}). Ref: ${transactionRefId}`;
         
+        // Send the notification to your phone.
         await sendPushoverNotification(notificationTitle, notificationMessage, upiLink);
 
+        // Respond to the user's app.
         return {
             statusCode: 200,
             body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
