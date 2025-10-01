@@ -1,7 +1,7 @@
 const https = require('https');
 
 // Get keys from Netlify's environment variables
-const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN, YOUR_UPI_ID } = process.env;
+const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN } = process.env;
 
 // Helper function to send a notification via Pushover
 function sendPushoverNotification(title, message, url) {
@@ -12,7 +12,7 @@ function sendPushoverNotification(title, message, url) {
             title: title,
             message: message,
             url: url,
-            url_title: "Tap to Pay"
+            url_title: "Tap to Pay in UPI App"
         });
 
         const options = {
@@ -29,6 +29,9 @@ function sendPushoverNotification(title, message, url) {
             if (res.statusCode === 200) {
                 resolve();
             } else {
+                res.on('data', (d) => {
+                    console.error('Pushover error response:', d.toString());
+                });
                 reject(`Pushover request failed with status: ${res.statusCode}`);
             }
         });
@@ -53,17 +56,23 @@ exports.handler = async (event) => {
         
         const amountInRupees = amount / 100.0;
 
-        // 1. Create the clickable UPI deeplink
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=WalletWithdrawal`;
+        // --- THIS IS THE CRITICAL FIX ---
+        // 1. Generate a unique Transaction Reference ID for this specific withdrawal.
+        // A simple combination of a prefix and the current timestamp is perfect for this.
+        const transactionRefId = `WDWL-${new Date().getTime()}`;
         
-        // 2. Create the notification message
+        // 2. Create the clickable UPI deeplink with the new 'tr' parameter.
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal&tr=${transactionRefId}`;
+        // --- END OF THE FIX ---
+        
+        // Create the notification message
         const notificationTitle = `Withdrawal Request: ₹${amountInRupees}`;
-        const notificationMessage = `Request from ${name} (${upiId}). Tap the link below to open your UPI app and complete the payment.`;
+        const notificationMessage = `Request from ${name} (${upiId}). Tap the link below to open your UPI app and complete the payment. Ref: ${transactionRefId}`;
         
-        // 3. Send the notification to your phone via Pushover
+        // Send the notification to your phone via Pushover
         await sendPushoverNotification(notificationTitle, notificationMessage, upiLink);
 
-        // 4. Respond to the user's app
+        // Respond to the user's app
         return {
             statusCode: 200,
             body: JSON.stringify({ message: "Withdrawal request has been sent to the operator for manual approval." })
