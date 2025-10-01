@@ -66,14 +66,11 @@ exports.handler = async (event) => {
         }
         
         const amountInRupees = amount / 100.0;
-        const merchantCategoryCode = "6012"; // Standard code for Financial Institutions
-        const transactionRefId = `WDWL-${new Date().getTime()}`;
         
         // Create the complete and compliant UPI deeplink.
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal&tr=${transactionRefId}&mc=${merchantCategoryCode}`;
-        
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Withdrawal Payout`;        
         const notificationTitle = `Withdrawal Request: ₹${amountInRupees}`;
-        const notificationMessage = `Request from ${name} (${upiId}). Ref: ${transactionRefId}`;
+        const notificationMessage = `Tap to pay ${name} (${upiId}).`;
         
         // Send the notification to your phone.
         await sendPushoverNotification(notificationTitle, notificationMessage, upiLink);
