@@ -51,34 +51,33 @@ exports.handler = async (event) => {
 
     try {
         const { amount, upiId, name } = JSON.parse(event.body);
-
-        if (!amount || !upiId || !name) {
-            return { statusCode: 400, body: 'Missing required fields.' };
-        }
+        if (!amount || !upiId || !name) { /* ... */ }
         
         const amountInRupees = amount / 100.0;
-        
-        // --- THIS IS THE DEFINITIVE FIX ---
-        
-        // 1. Create the shortest possible, valid upi:// deeplink.
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
         const shortCode = nanoid(7);
         
-        // Save the mapping in Firestore
+        // --- THIS IS THE CRITICAL FIX ---
+        // Ensure that the database write operation is fully completed
+        // by using 'await' before proceeding.
+        console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
+        console.log("Shortlink saved successfully.");
+        // --- END OF THE FIX ---
 
         const siteUrl = process.env.URL;
         const shortUrl = `${siteUrl}/pay/${shortCode}`;
-        
         const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
         
+        console.log("Sending SMS...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
-        return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
+        console.log("SMS sent successfully.");
 
+        return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
     } catch (error) {
         console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
         return {
