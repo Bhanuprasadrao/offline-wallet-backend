@@ -53,29 +53,28 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
+        const { amount, upiId, name } = JSON.parse(event.body);
 
-        if (!amount || !upiId || !name || !transactionId) {
+        if (!amount || !upiId || !name) {
             return { statusCode: 400, body: 'Missing required fields.' };
         }
         
         const amountInRupees = amount / 100.0;
         
-        // This is the fully compliant UPI deeplink we built before
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Payout. Ref: ${transactionId}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
-        
         // --- THIS IS THE CRITICAL FIX ---
-        // Create a much shorter, more efficient SMS body.
-        const smsBody = `Pay ₹${amountInRupees} to ${name} (${upiId}). Link: ${upiLink}`;
+        // Create the shortest possible, valid UPI deeplink.
+        // We are removing all optional parameters like tid, tr, and mc.
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
+        
+        // Create a very short message body.
+        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${upiLink}`;
         // --- END OF THE FIX ---
         
-        // Send the SMS to your personal phone number
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
 
-        // Respond to the user's app
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
+            body: JSON.stringify({ message: "Withdrawal request sent for manual approval." })
         };
 
     } catch (error) {
