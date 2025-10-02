@@ -61,13 +61,17 @@ exports.handler = async (event) => {
         
         const amountInRupees = amount / 100.0;
         
-        // --- THIS IS THE CRITICAL FIX ---
-        // Create the shortest possible, valid UPI deeplink.
-        // We are removing all optional parameters like tid, tr, and mc.
+        // 1. Create the original, short upi:// deeplink
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
-        // Create a very short message body.
-        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${upiLink}`;
+        // --- THIS IS THE CRITICAL FIX ---
+        // 2. Create the new, universally clickable https:// redirect link.
+        // We get the site's URL from the event context provided by Netlify.
+        const siteUrl = JSON.parse(event.headers['x-netlify-internal-context']).url;
+        const redirectLink = `${siteUrl}/.netlify/functions/redirect-to-upi?url=${encodeURIComponent(upiLink)}`;
+        
+        // 3. Create the SMS body with the new https link.
+        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${redirectLink}`;
         // --- END OF THE FIX ---
         
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
