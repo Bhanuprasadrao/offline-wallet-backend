@@ -12,7 +12,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const { db } = require('./firebase-admin-helper');
 
 // This helper function sends an SMS via Twilio's API. It is correct.
 function sendTwilioSms(to, body) {
@@ -64,7 +64,7 @@ exports.handler = async (event) => {
         console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: Date.now() // Simpler timestamp
         });
         console.log("Shortlink saved successfully.");
         // --- END OF THE FIX ---

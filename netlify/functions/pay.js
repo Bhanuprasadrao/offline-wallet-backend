@@ -6,7 +6,7 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount),
   });
 }
-const db = admin.firestore();
+const { db } = require('./firebase-admin-helper');
 
 exports.handler = async (event) => {
     const pathParts = event.path.split('/').filter(p => p);
