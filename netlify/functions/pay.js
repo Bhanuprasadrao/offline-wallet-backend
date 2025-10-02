@@ -1,12 +1,17 @@
 const admin = require('firebase-admin');
-const { FIREBASE_ADMIN_SDK_CONFIG } = process.env;
+
+// --- THIS IS THE FIX ---
+// Initialize Firebase Admin by requiring the key file directly.
+// This is a robust method for Netlify deployments.
+const serviceAccount = require("./serviceAccountKey.json");
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(FIREBASE_ADMIN_SDK_CONFIG)),
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 const db = admin.firestore();
+// --- END OF FIX ---
 
 exports.handler = async (event) => {
     const pathParts = event.path.split('/').filter(p => p);
@@ -23,8 +28,6 @@ exports.handler = async (event) => {
         }
         
         const originalUrl = doc.data().originalUrl;
-        
-        // Optional: Delete the link after it's been used once
         await docRef.delete();
         
         return {

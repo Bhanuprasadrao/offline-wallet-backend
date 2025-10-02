@@ -4,11 +4,14 @@ const { nanoid } = require("nanoid");
 
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER, FIREBASE_ADMIN_SDK_CONFIG } = process.env;
 
+const serviceAccount = require("./serviceAccountKey.json");
+
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(FIREBASE_ADMIN_SDK_CONFIG)),
+    credential: admin.credential.cert(serviceAccount),
   });
 }
+
 const db = admin.firestore();
 
 // This helper function sends an SMS via Twilio's API. It is correct.
@@ -60,8 +63,7 @@ exports.handler = async (event) => {
         // 1. Create the shortest possible, valid upi:// deeplink.
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
-        // --- THIS IS THE DEFINITIVE FIX ---
-        const shortCode = nanoid(7); // Generate a 7-character random code
+        const shortCode = nanoid(7);
         
         // Save the mapping in Firestore
         await db.collection('shortlinks').doc(shortCode).set({
@@ -73,7 +75,6 @@ exports.handler = async (event) => {
         const shortUrl = `${siteUrl}/pay/${shortCode}`;
         
         const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
-        // --- END OF THE FIX ---
         
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
         return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
