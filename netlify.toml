@@ -1,6 +1,11 @@
 [build]
   functions = "netlify/functions"
   publish = "public"
+  
+[[redirects]]
+  from = "/pay/*"
+  to = "/.netlify/functions/pay"
+  status = 200
 
 [functions]
   node_bundler = "esbuild"

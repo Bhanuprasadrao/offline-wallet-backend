@@ -1,4 +1,6 @@
 const https = require('https');
+const { getStore } = require("@netlify/blobs");
+const { nanoid } = require("nanoid"); // A library to generate short, random IDs
 
 // Get Twilio credentials and your personal phone number from Netlify's environment variables
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER } = process.env;
@@ -62,22 +64,25 @@ exports.handler = async (event) => {
         const amountInRupees = amount / 100.0;
         const transactionNote = `Wallet Payout. Ref: ${transactionId}`;
         
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
         // --- THIS IS THE DEFINITIVE FIX ---
-        // 1. Get the site's URL from Netlify's automatic environment variables.
-        const siteUrl = process.env.URL;
+        // 1. Generate a short, unique code (e.g., 'a7X2bZ')
+        const shortCode = nanoid(6);
+        
+        // 2. Get the database store for our links
+        const linkStore = getStore("upi_links");
+        
+        // 3. Save the short code and the long UPI link to the database
+        // We can set metadata to auto-delete the link after 1 hour (3600 seconds)
+        await linkStore.set(shortCode, upiLink, { metadata: { expires: Date.now() + 3600 * 1000 } });
 
-        if (!siteUrl) {
-            throw new Error("Could not determine the site URL. Ensure the 'URL' environment variable is available in your Netlify build settings.");
-        }
+        // 4. Create the new, ultra-short link for the SMS
+        const siteUrl = process.env.URL;
+        const shortUrl = `${siteUrl}/pay/${shortCode}`;
         
-        // 2. Create the full, universally clickable https:// redirect link.
-        // We encode the upiLink to make it safe to use as a URL parameter.
-        const redirectLink = `${siteUrl}/.netlify/functions/redirect-to-upi?url=${encodeURIComponent(upiLink)}`;
-        
-        // 3. Create the SMS body with the new https link.
-        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${redirectLink}`;
+        // 5. Create the ultra-short SMS body
+        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
         // --- END OF THE FIX ---
         
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
