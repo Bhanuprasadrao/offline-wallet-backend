@@ -3,7 +3,7 @@ const https = require('https');
 // Get Twilio credentials and your personal phone number from Netlify's environment variables
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER } = process.env;
 
-// This is a helper function to send an SMS via Twilio's API
+// This helper function sends an SMS via Twilio's API
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
@@ -60,11 +60,14 @@ exports.handler = async (event) => {
         }
         
         const amountInRupees = amount / 100.0;
-        const transactionNote = `Wallet Payout. Ref: ${transactionId}`;
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
         
-        // --- CREATE THE SMS BODY ---
-        const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}.\n\nTap to pay: ${upiLink}`;
+        // This is the fully compliant UPI deeplink we built before
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=Wallet Payout. Ref: ${transactionId}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
+        
+        // --- THIS IS THE CRITICAL FIX ---
+        // Create a much shorter, more efficient SMS body.
+        const smsBody = `Pay ₹${amountInRupees} to ${name} (${upiId}). Link: ${upiLink}`;
+        // --- END OF THE FIX ---
         
         // Send the SMS to your personal phone number
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
