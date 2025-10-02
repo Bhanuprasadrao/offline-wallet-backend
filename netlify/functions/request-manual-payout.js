@@ -1,39 +1,42 @@
 const https = require('https');
 
-const { PUSHOVER_USER_KEY, PUSHOVER_API_TOKEN, YOUR_PERSONAL_UPI_ID } = process.env;
+// Get Twilio credentials and your personal phone number from Netlify's environment variables
+const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER } = process.env;
 
-// This helper function sends the notification to your phone.
-function sendPushoverNotification(title, message, url) {
+// This is a helper function to send an SMS via Twilio's API
+function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
-        if (!PUSHOVER_API_TOKEN || !PUSHOVER_USER_KEY) {
-            return reject("Pushover API Token or User Key is not configured on the server.");
+        if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
+            return reject("Twilio credentials are not fully configured on the server.");
         }
 
-        const payload = JSON.stringify({
-            token: PUSHOVER_API_TOKEN,
-            user: PUSHOVER_USER_KEY,
-            title: title,
-            message: message,
-            url: url,
-            url_title: "Tap Here to Pay"
-        });
+        const payload = new URLSearchParams({
+            To: to,
+            From: TWILIO_PHONE_NUMBER,
+            Body: body,
+        }).toString();
+
+        const auth = "Basic " + Buffer.from(TWILIO_ACCOUNT_SID + ":" + TWILIO_AUTH_TOKEN).toString("base64");
 
         const options = {
-            hostname: 'api.pushover.net',
-            path: '/1/messages.json',
+            hostname: 'api.twilio.com',
+            path: `/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+            headers: {
+                'Authorization': auth,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
         };
 
         const req = https.request(options, (res) => {
-            if (res.statusCode === 200) {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
                 resolve();
             } else {
                 let errorData = '';
                 res.on('data', (d) => { errorData += d; });
                 res.on('end', () => {
-                    console.error('Pushover error response:', errorData);
-                    reject(`Pushover request failed with status: ${res.statusCode}`);
+                    console.error('Twilio error response:', errorData);
+                    reject(`Twilio request failed with status: ${res.statusCode}`);
                 });
             }
         });
@@ -43,17 +46,13 @@ function sendPushoverNotification(title, message, url) {
     });
 }
 
+
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
-        // We need YOUR UPI ID from the environment to construct the link
-        if (!YOUR_PERSONAL_UPI_ID) {
-            throw new Error("Server configuration error: YOUR_PERSONAL_UPI_ID is not set.");
-        }
-
         const { amount, upiId, name, transactionId } = JSON.parse(event.body);
 
         if (!amount || !upiId || !name || !transactionId) {
@@ -61,41 +60,23 @@ exports.handler = async (event) => {
         }
         
         const amountInRupees = amount / 100.0;
-        
-        // --- THIS IS THE DEFINITIVE FIX ---
-        // We are constructing the most complete and compliant link possible for a P2P-style business transaction.
-        
-        // Your business category. '6012' is for Financial Institutions.
-        const merchantCategoryCode = "6012";
-        
-        // A clear, unique transaction note.
         const transactionNote = `Wallet Payout. Ref: ${transactionId}`;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
         
-        // The final, compliant UPI deeplink.
-        const upiLink = `upi://pay?` +
-                      `pa=${upiId}` + // The person we are paying
-                      `&pn=${encodeURIComponent(name)}` + // Their name
-                      `&am=${amountInRupees}` + // The amount
-                      `&cu=INR` + // Currency
-                      `&tn=${encodeURIComponent(transactionNote)}` + // The note
-                      `&tid=${transactionId}` + // The unique transaction ID
-                      `&tr=${transactionId}` + // Transaction Reference (often same as tid)
-                      `&mc=${merchantCategoryCode}`; // Your merchant category
+        // --- CREATE THE SMS BODY ---
+        const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}.\n\nTap to pay: ${upiLink}`;
         
-        // --- END OF THE FIX ---
-        
-        const notificationTitle = `Withdrawal Request: ₹${amountInRupees}`;
-        const notificationMessage = `Tap to pay ${name} (${upiId}).`;
-        
-        await sendPushoverNotification(notificationTitle, notificationMessage, upiLink);
+        // Send the SMS to your personal phone number
+        await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
 
+        // Respond to the user's app
         return {
             statusCode: 200,
             body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
         };
 
     } catch (error) {
-        console.error("--- MANUAL PAYOUT REQUEST FAILED ---", error);
+        console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: "Failed to process request. Check server logs." })
