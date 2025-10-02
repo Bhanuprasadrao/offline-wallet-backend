@@ -1,7 +1,4 @@
-// This function's only job is to perform an HTTP redirect.
-
 exports.handler = async (event) => {
-    // Get the original UPI URL from the query parameter.
     const upiUrl = event.queryStringParameters.url;
 
     if (!upiUrl) {
@@ -11,14 +8,12 @@ exports.handler = async (event) => {
         };
     }
 
-    // This is the magic. We return a 302 Redirect status code
-    // and set the 'Location' header to the original upi:// link.
-    // The browser will automatically follow this redirect.
+    // This redirects the user's browser to the upi:// link.
     return {
         statusCode: 302,
         headers: {
             'Location': upiUrl
         },
-        body: '' // The body is empty for a redirect
+        body: ''
     };
 };

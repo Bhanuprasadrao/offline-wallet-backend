@@ -55,34 +55,32 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
+        const { amount, upiId, name } = JSON.parse(event.body);
 
-        if (!amount || !upiId || !name || !transactionId) {
+        if (!amount || !upiId || !name) {
             return { statusCode: 400, body: 'Missing required fields.' };
         }
         
         const amountInRupees = amount / 100.0;
-        const transactionNote = `Wallet Payout. Ref: ${transactionId}`;
-        
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
         // --- THIS IS THE DEFINITIVE FIX ---
-        // 1. Generate a short, unique code (e.g., 'a7X2bZ')
-        const shortCode = nanoid(6);
         
-        // 2. Get the database store for our links
-        const linkStore = getStore("upi_links");
+        // 1. Create the shortest possible, valid upi:// deeplink.
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
-        // 3. Save the short code and the long UPI link to the database
-        // We can set metadata to auto-delete the link after 1 hour (3600 seconds)
-        await linkStore.set(shortCode, upiLink, { metadata: { expires: Date.now() + 3600 * 1000 } });
-
-        // 4. Create the new, ultra-short link for the SMS
+        // 2. Get the site's URL from Netlify's environment variables.
         const siteUrl = process.env.URL;
-        const shortUrl = `${siteUrl}/pay/${shortCode}`;
+        if (!siteUrl) {
+            throw new Error("Could not determine site URL.");
+        }
         
-        // 5. Create the ultra-short SMS body
-        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
+        // 3. Create the universally clickable https:// redirect link.
+        //    We encode the entire upiLink to make it a safe parameter.
+        const redirectLink = `${siteUrl}/.netlify/functions/redirect-to-upi?url=${encodeURIComponent(upiLink)}`;
+        
+        // 4. Create the absolute shortest possible SMS body.
+        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${redirectLink}`;
+        
         // --- END OF THE FIX ---
         
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);

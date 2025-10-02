@@ -10,8 +10,6 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.18.2",
-    "razorpay": "^2.9.2",
-    "@netlify/blobs": "^6.4.1",
-    "nanoid": "^3.3.7"
+    "razorpay": "^2.9.2"
   }
 }
