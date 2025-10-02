@@ -53,21 +53,27 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, upiId, name } = JSON.parse(event.body);
+        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
 
-        if (!amount || !upiId || !name) {
+        if (!amount || !upiId || !name || !transactionId) {
             return { statusCode: 400, body: 'Missing required fields.' };
         }
         
         const amountInRupees = amount / 100.0;
+        const transactionNote = `Wallet Payout. Ref: ${transactionId}`;
         
-        // 1. Create the original, short upi:// deeplink
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tid=${transactionId}&tr=${transactionId}&mc=6012`;
         
-        // --- THIS IS THE CRITICAL FIX ---
-        // 2. Create the new, universally clickable https:// redirect link.
-        // We get the site's URL from the event context provided by Netlify.
-        const siteUrl = JSON.parse(event.headers['x-netlify-internal-context']).url;
+        // --- THIS IS THE DEFINITIVE FIX ---
+        // 1. Get the site's URL from Netlify's automatic environment variables.
+        const siteUrl = process.env.URL;
+
+        if (!siteUrl) {
+            throw new Error("Could not determine the site URL. Ensure the 'URL' environment variable is available in your Netlify build settings.");
+        }
+        
+        // 2. Create the full, universally clickable https:// redirect link.
+        // We encode the upiLink to make it safe to use as a URL parameter.
         const redirectLink = `${siteUrl}/.netlify/functions/redirect-to-upi?url=${encodeURIComponent(upiLink)}`;
         
         // 3. Create the SMS body with the new https link.
@@ -78,7 +84,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: "Withdrawal request sent for manual approval." })
+            body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
         };
 
     } catch (error) {
