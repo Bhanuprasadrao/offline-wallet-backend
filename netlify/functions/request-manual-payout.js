@@ -1,6 +1,15 @@
 const https = require('https');
+const admin = require('firebase-admin');
+const { nanoid } = require("nanoid");
 
-const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER } = process.env;
+const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER, FIREBASE_ADMIN_SDK_CONFIG } = process.env;
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(FIREBASE_ADMIN_SDK_CONFIG)),
+  });
+}
+const db = admin.firestore();
 
 // This helper function sends an SMS via Twilio's API. It is correct.
 function sendTwilioSms(to, body) {
@@ -51,26 +60,23 @@ exports.handler = async (event) => {
         // 1. Create the shortest possible, valid upi:// deeplink.
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
-        // 2. Get the site's URL from Netlify's automatic environment variables.
+        // --- THIS IS THE DEFINITIVE FIX ---
+        const shortCode = nanoid(7); // Generate a 7-character random code
+        
+        // Save the mapping in Firestore
+        await db.collection('shortlinks').doc(shortCode).set({
+            originalUrl: upiLink,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
         const siteUrl = process.env.URL;
-        if (!siteUrl) {
-            throw new Error("Could not determine site URL.");
-        }
+        const shortUrl = `${siteUrl}/pay/${shortCode}`;
         
-        // 3. Create the universally clickable https:// redirect link.
-        const redirectLink = `${siteUrl}/.netlify/functions/redirect-to-upi?url=${encodeURIComponent(upiLink)}`;
-        
-        // 4. Create the absolute shortest possible SMS body.
-        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${redirectLink}`;
-        
+        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
         // --- END OF THE FIX ---
         
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
-        };
+        return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
 
     } catch (error) {
         console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
