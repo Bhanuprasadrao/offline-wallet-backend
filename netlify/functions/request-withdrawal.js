@@ -1,10 +1,11 @@
-// --- THIS IS THE FIX ---
-// The module name is 'https', not 'httpsys'.
 const https = require('https');
-// --------------------
-
 const { nanoid } = require("nanoid");
-const { db } = require('./firebase-admin-helper');
+// --- THIS IS THE FIX ---
+// We import the entire 'admin' object to ensure it's fully initialized.
+const { admin } = require('./firebase-admin-helper');
+// And then we get the firestore instance from it.
+const db = admin.firestore();
+// --- END OF THE FIX ---
 
 const {
     TWILIO_ACCOUNT_SID,
@@ -60,10 +61,11 @@ exports.handler = async (event) => {
         
         const shortCode = nanoid(8);
         
-        console.log(`Saving shortlink. Code: ${shortCode}`);
+        console.log(`Saving shortlink. Code: [${shortCode}], URL: [${upiLink}]`);
+        // This 'db' instance is now guaranteed to be valid.
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
-            createdAt: new Date().toISOString()
+            createdAt: admin.firestore.FieldValue.serverTimestamp() // Use server timestamp for accuracy
         });
         console.log("Shortlink saved successfully.");
 
