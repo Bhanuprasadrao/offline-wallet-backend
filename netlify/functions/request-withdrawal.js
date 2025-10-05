@@ -1,8 +1,7 @@
 const https = require('https');
 const { nanoid } = require("nanoid");
-// --- THIS IS THE FIX ---
-// We import the entire 'admin' object to ensure it's fully initialized.
-const { admin } = require('./firebase-admin-helper');
+const { admin, db } = require('./firebase-admin-helper');
+
 // And then we get the firestore instance from it.
 const db = admin.firestore();
 // --- END OF THE FIX ---
@@ -61,21 +60,41 @@ exports.handler = async (event) => {
         
         const shortCode = nanoid(8);
         
-        console.log(`Saving shortlink. Code: [${shortCode}], URL: [${upiLink}]`);
-        // This 'db' instance is now guaranteed to be valid.
-        await db.collection('shortlinks').doc(shortCode).set({
+        // --- START OF THE DEFINITIVE DIAGNOSTIC TEST ---
+        
+        // Step 1: Attempt to write the document to Firestore.
+        console.log(`Step 1: Attempting to WRITE document with ID: [${shortCode}]`);
+        const docRef = db.collection('shortlinks').doc(shortCode);
+        await docRef.set({
             originalUrl: upiLink,
-            createdAt: admin.firestore.FieldValue.serverTimestamp() // Use server timestamp for accuracy
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        console.log("Shortlink saved successfully.");
+        console.log("Step 2: Write operation completed without error.");
 
+        // Step 2: Immediately attempt to READ the same document back.
+        console.log(`Step 3: Attempting to READ document with ID: [${shortCode}]`);
+        const docSnapshot = await docRef.get();
+
+        // Step 3: Verify if the read was successful.
+        if (!docSnapshot.exists) {
+            // THIS IS THE CRITICAL FAILURE POINT
+            console.error("--- FATAL ERROR: READ-YOUR-OWN-WRITE FAILED ---");
+            console.error(`Document with ID [${shortCode}] was NOT found immediately after being written.`);
+            throw new Error("Firestore consistency error: Document not found after write.");
+        }
+        
+        console.log("Step 4: Read operation successful. Document exists. Data:", docSnapshot.data());
+        // --- END OF THE DEFINITIVE DIAGNOSTIC TEST ---
+
+
+        // If we get here, the Firestore operation is 100% successful.
         const siteUrl = process.env.URL;
         const shortUrl = `${siteUrl}/r/${shortCode}`;
         const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
-        console.log("Sending SMS via Twilio...");
+        console.log("Step 5: Sending SMS via Twilio...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
-        console.log("SMS sent successfully.");
+        console.log("Step 6: SMS sent successfully.");
 
         return { statusCode: 200, body: JSON.stringify({ message: "Request has been sent for processing." }) };
     } catch (error) {

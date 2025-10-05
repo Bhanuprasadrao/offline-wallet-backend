@@ -1,7 +1,5 @@
 const admin = require('firebase-admin');
-
 const { FIREBASE_ADMIN_SDK_CONFIG } = process.env;
-
 if (!admin.apps.length) {
   try {
     const serviceAccount = JSON.parse(FIREBASE_ADMIN_SDK_CONFIG);
@@ -13,8 +11,6 @@ if (!admin.apps.length) {
     console.error("CRITICAL: Error initializing Firebase Admin SDK:", error);
   }
 }
-
-// Export the entire admin instance and the db instance separately
 module.exports = {
   admin: admin,
   db: admin.firestore()
