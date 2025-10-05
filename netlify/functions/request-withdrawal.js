@@ -1,52 +1,85 @@
-// This test will check if all our required modules and environment variables can be loaded.
+const https = require('httpsys');
+const { nanoid } = require("nanoid");
+const { db } = require('./firebase-admin-helper'); // Get our initialized DB
+
+// Get all Twilio secrets from Netlify Environment Variables
+const {
+    TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN,
+    TWILIO_PHONE_NUMBER,
+    YOUR_PERSONAL_PHONE_NUMBER
+} = process.env;
+
+// Helper function to send an SMS via Twilio's API
+function sendTwilioSms(to, body) {
+    return new Promise((resolve, reject) => {
+        // Double-check that all required Twilio variables are present
+        if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
+            return reject("One or more Twilio environment variables are missing.");
+        }
+        const payload = new URLSearchParams({ To: to, From: TWILIO_PHONE_NUMBER, Body: body }).toString();
+        const auth = "Basic " + Buffer.from(TWILIO_ACCOUNT_SID + ":" + TWILIO_AUTH_TOKEN).toString("base64");
+        const options = {
+            hostname: 'api.twilio.com',
+            path: `/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+            method: 'POST',
+            headers: { 'Authorization': auth, 'Content-Type': 'application/x-www-form-urlencoded' }
+        };
+        const req = https.request(options, (res) => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                resolve();
+            } else {
+                let errorData = '';
+                res.on('data', (d) => { errorData += d; });
+                res.on('end', () => {
+                    console.error('Twilio error response:', errorData);
+                    reject(`Twilio request failed with status: ${res.statusCode}`);
+                });
+            }
+        });
+        req.on('error', (e) => reject(e));
+        req.write(payload);
+        req.end();
+    });
+}
 
 exports.handler = async (event) => {
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
+    }
+
     try {
-        console.log("--- Starting Dependency Check ---");
-
-        // Test 1: Load standard Node.js modules
-        const https = require('https');
-        console.log("✅ 'https' module loaded successfully.");
-
-        // Test 2: Load npm packages
-        const { nanoid } = require("nanoid");
-        console.log("✅ 'nanoid' module loaded successfully.");
-
-        // Test 3: Load our local helper file and test Firebase init
-        const { db } = require('./firebase-admin-helper');
-        console.log("✅ 'firebase-admin-helper' loaded successfully.");
-        if (!db) throw new Error("Firestore 'db' instance is null or undefined after import.");
-        console.log("✅ Firestore 'db' instance is valid.");
+        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
+        if (!amount || !upiId || !name || !transactionId) {
+            return { statusCode: 400, body: "Missing required fields." };
+        }
         
-        // Test 4: Check for all required environment variables
-        const {
-            TWILIO_ACCOUNT_SID,
-            TWILIO_AUTH_TOKEN,
-            TWILIO_PHONE_NUMBER,
-            YOUR_PERSONAL_PHONE_NUMBER,
-            FIREBASE_ADMIN_SDK_CONFIG
-        } = process.env;
-
-        if (!TWILIO_ACCOUNT_SID) throw new Error("Environment variable 'TWILIO_ACCOUNT_SID' is missing.");
-        if (!TWILIO_AUTH_TOKEN) throw new Error("Environment variable 'TWILIO_AUTH_TOKEN' is missing.");
-        if (!TWILIO_PHONE_NUMBER) throw new Error("Environment variable 'TWILIO_PHONE_NUMBER' is missing.");
-        if (!YOUR_PERSONAL_PHONE_NUMBER) throw new Error("Environment variable 'YOUR_PERSONAL_PHONE_NUMBER' is missing.");
-        if (!FIREBASE_ADMIN_SDK_CONFIG) throw new Error("Environment variable 'FIREBASE_ADMIN_SDK_CONFIG' is missing.");
+        const amountInRupees = amount / 100.0;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionId}&tn=Wallet%20Withdrawal&cu=INR`;
         
-        console.log("✅ All required environment variables are present.");
-        console.log("--- Dependency Check Succeeded ---");
+        const shortCode = nanoid(8);
+        
+        console.log(`Saving shortlink. Code: ${shortCode}`);
+        await db.collection('shortlinks').doc(shortCode).set({
+            originalUrl: upiLink,
+            createdAt: new Date().toISOString()
+        });
+        console.log("Shortlink saved successfully.");
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: "Test 2 Succeeded. All dependencies and environment variables are loaded correctly." })
-        };
+        const siteUrl = process.env.URL;
+        const shortUrl = `${siteUrl}/r/${shortCode}`;
+        const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
+        
+        console.log("Sending SMS via Twilio...");
+        await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
+        console.log("SMS sent successfully.");
 
+        return { statusCode: 200, body: JSON.stringify({ message: "Request has been sent for processing." }) };
     } catch (error) {
-        console.error("--- DEPENDENCY CHECK FAILED ---");
-        console.error("The crash is caused by this error:", error);
+        console.error("--- WITHDRAWAL REQUEST FAILED ---", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Dependency check failed. See server logs for details." })
+            body: JSON.stringify({ error: "Failed to process request. Check server logs." })
         };
     }
 };
