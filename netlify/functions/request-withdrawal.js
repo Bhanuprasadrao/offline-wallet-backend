@@ -59,16 +59,16 @@ exports.handler = async (event) => {
         
         const shortCode = nanoid(8);
         
-        console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
-        // This 'db' instance now comes from our reliable helper file.
+        console.log(`Saving shortlink. Code: ${shortCode}`);
+        // This 'db' instance is now guaranteed to be initialized and ready.
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
             createdAt: new Date().toISOString()
         });
         console.log("Shortlink saved successfully.");
 
-        const siteUrl = process.env.URL; // This is provided by Netlify
-        const shortUrl = `${siteUrl}/r/${shortCode}`;
+        const siteUrl = process.env.URL;
+        const shortUrl = `${siteUrl}/r/${shortCode}`; // Assuming you have the /r/ redirect rule
         const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
         console.log("Sending SMS...");
@@ -77,7 +77,7 @@ exports.handler = async (event) => {
 
         return { statusCode: 200, body: JSON.stringify({ message: "Request has been sent for processing." }) };
     } catch (error) {
-        console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
+        console.error("--- WITHDRAWAL REQUEST FAILED ---", error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: "Failed to process request. Check server logs." })
