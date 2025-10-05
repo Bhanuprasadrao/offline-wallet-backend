@@ -1,8 +1,11 @@
-const https = require('httpsys');
-const { nanoid } = require("nanoid");
-const { db } = require('./firebase-admin-helper'); // Get our initialized DB
+// --- THIS IS THE FIX ---
+// The module name is 'https', not 'httpsys'.
+const https = require('https');
+// --------------------
 
-// Get all Twilio secrets from Netlify Environment Variables
+const { nanoid } = require("nanoid");
+const { db } = require('./firebase-admin-helper');
+
 const {
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
@@ -10,12 +13,10 @@ const {
     YOUR_PERSONAL_PHONE_NUMBER
 } = process.env;
 
-// Helper function to send an SMS via Twilio's API
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
-        // Double-check that all required Twilio variables are present
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
-            return reject("One or more Twilio environment variables are missing.");
+            return reject("Twilio credentials are not fully configured on the server.");
         }
         const payload = new URLSearchParams({ To: to, From: TWILIO_PHONE_NUMBER, Body: body }).toString();
         const auth = "Basic " + Buffer.from(TWILIO_ACCOUNT_SID + ":" + TWILIO_AUTH_TOKEN).toString("base64");
