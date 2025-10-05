@@ -2,13 +2,23 @@
 const { db } = require('./firebase-admin-helper');
 
 exports.handler = async (event) => {
-    // This is the query parameter name defined in netlify.toml (`?code=:shortcode`)
-    const shortCode = event.queryStringParameters.code;
+    // --- THIS IS THE DEFINITIVE FIX ---
+    // For a 'status = 200' rewrite, the short code is part of the path.
+    // Example path: /.netlify/functions/redirector
+    // We need to get it from the original requested path.
     
-    console.log(`Redirector function triggered for code: [${shortCode}]`);
+    // The original path from the browser is in event.path
+    // Example: /r/abcdefg
+    const pathParts = event.path.split('/').filter(p => p.trim() !== ''); // -> ["r", "abcdefg"]
+    
+    // The short code is the last part of the path.
+    const shortCode = pathParts.pop();
+    // --- END OF THE FIX ---
+    
+    console.log(`Redirector function triggered for path: ${event.path}. Extracted code: [${shortCode}]`);
 
     if (!shortCode) {
-        console.error("Query parameter 'code' was missing from the request.");
+        console.error("Could not extract a short code from the path:", event.path);
         return { statusCode: 400, body: "Bad Request: Short code is missing from URL." };
     }
 
@@ -29,8 +39,6 @@ exports.handler = async (event) => {
         
         console.log(`Found original URL: ${originalUrl}. Redirecting user...`);
         
-        // As a security measure, we delete the link immediately after it's been read
-        // to prevent it from being used twice.
         await docRef.delete();
         
         // Return a 302 Redirect, which tells the browser to immediately go to the new URL.
