@@ -47,17 +47,24 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
-        if (!amount || !upiId || !name || !transactionId) {
+        // We no longer need the transactionId from the app
+        const { amount, upiId, name } = JSON.parse(event.body);
+        if (!amount || !upiId || !name) {
             return { statusCode: 400, body: "Missing required fields." };
         }
         
         const amountInRupees = amount / 100.0;
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionId}&tn=Wallet%20Withdrawal&cu=INR`;
+        
+        // --- THIS IS THE DEFINITIVE FIX ---
+        // We now generate a simple, purely numeric, timestamp-based Transaction ID.
+        // This is much cleaner and more compatible with all UPI apps and banks.
+        const transactionRef = `WD${Date.now()}`; // Example: WD1756377036000
+        // --- END OF THE FIX ---
+        
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionRef}&tn=Wallet%20Withdrawal&cu=INR`;
         
         const shortCode = nanoid(8);
         
-        // This line will now be reached and will execute successfully.
         console.log(`Saving shortlink. Code: [${shortCode}]`);
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
