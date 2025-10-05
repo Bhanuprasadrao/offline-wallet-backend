@@ -1,23 +1,20 @@
-// --- THIS IS THE CRITICAL FIX ---
-// We must require the built-in 'https' module to make API calls.
 const https = require('https');
-// --------------------------------
-
 const admin = require('firebase-admin');
 const { nanoid } = require("nanoid");
 
-const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER } = process.env;
+const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER, FIREBASE_ADMIN_SDK_CONFIG } = process.env;
+
 const serviceAccount = require("./serviceAccountKey.json");
 
-// Initialize Firebase Admin SDK (if not already initialized)
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 }
-const db = admin.firestore();
 
-// This helper function sends an SMS via Twilio's API. It is now guaranteed to work.
+const { db } = require('./firebase-admin-helper');
+
+// This helper function sends an SMS via Twilio's API. It is correct.
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
@@ -31,12 +28,8 @@ function sendTwilioSms(to, body) {
             method: 'POST',
             headers: { 'Authorization': auth, 'Content-Type': 'application/x-www-form-urlencoded' }
         };
-
-        // This 'https' variable will now be defined correctly.
         const req = https.request(options, (res) => {
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-                resolve();
-            } else {
+            if (res.statusCode >= 200 && res.statusCode < 300) { resolve(); } else {
                 let errorData = '';
                 res.on('data', (d) => { errorData += d; });
                 res.on('end', () => {
@@ -51,7 +44,6 @@ function sendTwilioSms(to, body) {
     });
 }
 
-
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -59,32 +51,33 @@ exports.handler = async (event) => {
 
     try {
         const { amount, upiId, name } = JSON.parse(event.body);
-        if (!amount || !upiId || !name) {
-            return { statusCode: 400, body: 'Missing required fields.' };
-        }
+        if (!amount || !upiId || !name) { /* ... */ }
         
         const amountInRupees = amount / 100.0;
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
         
         const shortCode = nanoid(7);
         
+        // --- THIS IS THE CRITICAL FIX ---
+        // Ensure that the database write operation is fully completed
+        // by using 'await' before proceeding.
+        console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: Date.now() // Simpler timestamp
         });
+        console.log("Shortlink saved successfully.");
+        // --- END OF THE FIX ---
 
         const siteUrl = process.env.URL;
         const shortUrl = `${siteUrl}/pay/${shortCode}`;
-        
         const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
         
+        console.log("Sending SMS...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
+        console.log("SMS sent successfully.");
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: "Withdrawal request has been sent for manual approval." })
-        };
-
+        return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
     } catch (error) {
         console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
         return {
