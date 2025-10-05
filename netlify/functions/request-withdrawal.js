@@ -1,23 +1,17 @@
 const https = require('https');
-const admin = require('firebase-admin');
 const { nanoid } = require("nanoid");
 
-// Get all secrets from Netlify Environment Variables
+// --- THIS IS THE FIX ---
+// We now get our initialized 'db' instance from the central helper file.
+const { db } = require('./firebase-admin-helper');
+
+// Get all Twilio secrets from Netlify Environment Variables
 const {
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER,
-    YOUR_PERSONAL_PHONE_NUMBER,
-    FIREBASE_ADMIN_SDK_CONFIG // The JSON content of your service account key
+    YOUR_PERSONAL_PHONE_NUMBER
 } = process.env;
-
-// Initialize Firebase Admin SDK ONLY if it hasn't been already
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(FIREBASE_ADMIN_SDK_CONFIG))
-  });
-}
-const db = admin.firestore();
 
 // Helper function to send an SMS via Twilio's API
 function sendTwilioSms(to, body) {
@@ -63,18 +57,17 @@ exports.handler = async (event) => {
         const amountInRupees = amount / 100.0;
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionId}&tn=Wallet%20Withdrawal&cu=INR`;
         
-        // Generate a short, unique code for the link
         const shortCode = nanoid(8);
         
         console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
-        // Save the original UPI link to Firestore using the short code as the document ID
+        // This 'db' instance now comes from our reliable helper file.
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: new Date().toISOString()
         });
         console.log("Shortlink saved successfully.");
 
-        const siteUrl = process.env.URL; // Netlify provides this automatically
+        const siteUrl = process.env.URL; // This is provided by Netlify
         const shortUrl = `${siteUrl}/r/${shortCode}`;
         const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
