@@ -2,19 +2,24 @@ const https = require('https');
 const admin = require('firebase-admin');
 const { nanoid } = require("nanoid");
 
-const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, YOUR_PERSONAL_PHONE_NUMBER, FIREBASE_ADMIN_SDK_CONFIG } = process.env;
+// Get all secrets from Netlify Environment Variables
+const {
+    TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN,
+    TWILIO_PHONE_NUMBER,
+    YOUR_PERSONAL_PHONE_NUMBER,
+    FIREBASE_ADMIN_SDK_CONFIG // The JSON content of your service account key
+} = process.env;
 
-const serviceAccount = require("./serviceAccountKey.json");
-
+// Initialize Firebase Admin SDK ONLY if it hasn't been already
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert(JSON.parse(FIREBASE_ADMIN_SDK_CONFIG))
   });
 }
+const db = admin.firestore();
 
-const { db } = require('./firebase-admin-helper');
-
-// This helper function sends an SMS via Twilio's API. It is correct.
+// Helper function to send an SMS via Twilio's API
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
@@ -50,34 +55,34 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { amount, upiId, name } = JSON.parse(event.body);
-        if (!amount || !upiId || !name) { /* ... */ }
+        const { amount, upiId, name, transactionId } = JSON.parse(event.body);
+        if (!amount || !upiId || !name || !transactionId) {
+            return { statusCode: 400, body: "Missing required fields." };
+        }
         
         const amountInRupees = amount / 100.0;
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&cu=INR`;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionId}&tn=Wallet%20Withdrawal&cu=INR`;
         
-        const shortCode = nanoid(7);
+        // Generate a short, unique code for the link
+        const shortCode = nanoid(8);
         
-        // --- THIS IS THE CRITICAL FIX ---
-        // Ensure that the database write operation is fully completed
-        // by using 'await' before proceeding.
         console.log(`Saving shortlink. Code: ${shortCode}, URL: ${upiLink}`);
+        // Save the original UPI link to Firestore using the short code as the document ID
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
-            createdAt: Date.now() // Simpler timestamp
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
         console.log("Shortlink saved successfully.");
-        // --- END OF THE FIX ---
 
-        const siteUrl = process.env.URL;
-        const shortUrl = `${siteUrl}/pay/${shortCode}`;
-        const smsBody = `Pay ₹${amountInRupees} to ${name}: ${shortUrl}`;
+        const siteUrl = process.env.URL; // Netlify provides this automatically
+        const shortUrl = `${siteUrl}/r/${shortCode}`;
+        const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
         console.log("Sending SMS...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
         console.log("SMS sent successfully.");
 
-        return { statusCode: 200, body: JSON.stringify({ message: "Request sent." }) };
+        return { statusCode: 200, body: JSON.stringify({ message: "Request has been sent for processing." }) };
     } catch (error) {
         console.error("--- MANUAL PAYOUT SMS FAILED ---", error);
         return {
