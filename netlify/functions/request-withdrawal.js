@@ -1,10 +1,8 @@
 const https = require('https');
 const { nanoid } = require("nanoid");
-const { admin, db } = require('./firebase-admin-helper');
+// --- THIS IS THE ONLY FIREBASE-RELATED LINE ---
+const { db } = require('./firebase-admin-helper');
 
-// And then we get the firestore instance from it.
-const db = admin.firestore();
-// --- END OF THE FIX ---
 
 const {
     TWILIO_ACCOUNT_SID,
