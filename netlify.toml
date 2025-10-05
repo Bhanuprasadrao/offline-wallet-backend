@@ -3,9 +3,10 @@
   publish = "public"
 
 [[redirects]]
-  from = "/pay/*"
-  to = "/.netlify/functions/pay"
+  from = "/r/:shortcode"
+  to = "/.netlify/functions/redirector?code=:shortcode"
   status = 200
   
 [functions]
   node_bundler = "esbuild"
+  included_files = ["node_modules/**"]
