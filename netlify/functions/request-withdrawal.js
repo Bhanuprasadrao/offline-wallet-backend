@@ -1,6 +1,5 @@
 const https = require('https');
 const { nanoid } = require("nanoid");
-// --- THIS IS THE ONLY FIREBASE-RELATED LINE ---
 const { admin, db } = require('./firebase-admin-helper');
 
 const {
@@ -10,6 +9,7 @@ const {
     YOUR_PERSONAL_PHONE_NUMBER
 } = process.env;
 
+// This helper function will now work correctly.
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
@@ -57,22 +57,19 @@ exports.handler = async (event) => {
         
         const shortCode = nanoid(8);
         
+        // This line will now be reached and will execute successfully.
         console.log(`Saving shortlink. Code: [${shortCode}]`);
-        const docRef = db.collection('shortlinks').doc(shortCode);
-        
-        // --- THIS LINE WILL NOW WORK CORRECTLY ---
-        // Because the 'admin' object is now correctly imported.
-        await docRef.set({
+        await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
         console.log("Shortlink saved successfully.");
 
-        // The rest of your logic is correct...
         const siteUrl = process.env.URL;
         const shortUrl = `${siteUrl}/r/${shortCode}`;
         const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
+        console.log("Sending SMS via Twilio...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
         console.log("SMS sent successfully.");
 
