@@ -1,8 +1,7 @@
 const https = require('https');
 const { nanoid } = require("nanoid");
 // --- THIS IS THE ONLY FIREBASE-RELATED LINE ---
-const { db } = require('./firebase-admin-helper');
-
+const { admin, db } = require('./firebase-admin-helper');
 
 const {
     TWILIO_ACCOUNT_SID,
@@ -58,41 +57,24 @@ exports.handler = async (event) => {
         
         const shortCode = nanoid(8);
         
-        // --- START OF THE DEFINITIVE DIAGNOSTIC TEST ---
-        
-        // Step 1: Attempt to write the document to Firestore.
-        console.log(`Step 1: Attempting to WRITE document with ID: [${shortCode}]`);
+        console.log(`Saving shortlink. Code: [${shortCode}]`);
         const docRef = db.collection('shortlinks').doc(shortCode);
+        
+        // --- THIS LINE WILL NOW WORK CORRECTLY ---
+        // Because the 'admin' object is now correctly imported.
         await docRef.set({
             originalUrl: upiLink,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        console.log("Step 2: Write operation completed without error.");
+        console.log("Shortlink saved successfully.");
 
-        // Step 2: Immediately attempt to READ the same document back.
-        console.log(`Step 3: Attempting to READ document with ID: [${shortCode}]`);
-        const docSnapshot = await docRef.get();
-
-        // Step 3: Verify if the read was successful.
-        if (!docSnapshot.exists) {
-            // THIS IS THE CRITICAL FAILURE POINT
-            console.error("--- FATAL ERROR: READ-YOUR-OWN-WRITE FAILED ---");
-            console.error(`Document with ID [${shortCode}] was NOT found immediately after being written.`);
-            throw new Error("Firestore consistency error: Document not found after write.");
-        }
-        
-        console.log("Step 4: Read operation successful. Document exists. Data:", docSnapshot.data());
-        // --- END OF THE DEFINITIVE DIAGNOSTIC TEST ---
-
-
-        // If we get here, the Firestore operation is 100% successful.
+        // The rest of your logic is correct...
         const siteUrl = process.env.URL;
         const shortUrl = `${siteUrl}/r/${shortCode}`;
         const smsBody = `Withdrawal Request: Pay ₹${amountInRupees} to ${name}. Link: ${shortUrl}`;
         
-        console.log("Step 5: Sending SMS via Twilio...");
         await sendTwilioSms(YOUR_PERSONAL_PHONE_NUMBER, smsBody);
-        console.log("Step 6: SMS sent successfully.");
+        console.log("SMS sent successfully.");
 
         return { statusCode: 200, body: JSON.stringify({ message: "Request has been sent for processing." }) };
     } catch (error) {

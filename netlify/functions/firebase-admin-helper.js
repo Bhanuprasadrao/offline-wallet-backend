@@ -15,5 +15,6 @@ if (!admin.apps.length) {
 }
 
 module.exports = {
+  admin: admin,
   db: admin.firestore()
 };
