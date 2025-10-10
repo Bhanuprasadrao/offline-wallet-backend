@@ -1,19 +1,10 @@
-// Get the initialized Firestore database instance from our helper file
 const { db } = require('./firebase-admin-helper');
 
 exports.handler = async (event) => {
-    // --- THIS IS THE DEFINITIVE FIX ---
-    // For a 'status = 200' rewrite, the short code is part of the path.
-    // Example path: /.netlify/functions/redirector
-    // We need to get it from the original requested path.
     
-    // The original path from the browser is in event.path
-    // Example: /r/abcdefg
-    const pathParts = event.path.split('/').filter(p => p.trim() !== ''); // -> ["r", "abcdefg"]
+    const pathParts = event.path.split('/').filter(p => p.trim() !== ''); 
     
-    // The short code is the last part of the path.
     const shortCode = pathParts.pop();
-    // --- END OF THE FIX ---
     
     console.log(`Redirector function triggered for path: ${event.path}. Extracted code: [${shortCode}]`);
 
@@ -41,7 +32,6 @@ exports.handler = async (event) => {
         
         await docRef.delete();
         
-        // Return a 302 Redirect, which tells the browser to immediately go to the new URL.
         return {
             statusCode: 302,
             headers: {

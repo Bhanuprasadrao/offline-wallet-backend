@@ -9,7 +9,6 @@ const {
     YOUR_PERSONAL_PHONE_NUMBER
 } = process.env;
 
-// This helper function will now work correctly.
 function sendTwilioSms(to, body) {
     return new Promise((resolve, reject) => {
         if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER || !YOUR_PERSONAL_PHONE_NUMBER) {
@@ -53,12 +52,11 @@ exports.handler = async (event) => {
         }
         
         const amountInRupees = amount / 100.0;
-        const transactionRef = `WD${Date.now()}`; // Example: WD1756377036000
+        const transactionRef = `WD${Date.now()}`; 
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amountInRupees}&tr=${transactionId}&tn=Wallet%20Withdrawal&cu=INR`;
         
         const shortCode = nanoid(8);
         
-        // This line will now be reached and will execute successfully.
         console.log(`Saving shortlink. Code: [${shortCode}]`);
         await db.collection('shortlinks').doc(shortCode).set({
             originalUrl: upiLink,
