@@ -1,4 +1,4 @@
-/*const admin = require('firebase-admin');
+const admin = require('firebase-admin');
 
 const { FIREBASE_ADMIN_SDK_CONFIG } = process.env;
 
@@ -17,4 +17,4 @@ if (!admin.apps.length) {
 module.exports = {
   admin: admin,
   db: admin.firestore()
-};*/
+};

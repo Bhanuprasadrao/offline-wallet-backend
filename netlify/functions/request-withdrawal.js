@@ -1,4 +1,4 @@
-/*const https = require('https');
+const https = require('https');
 const { nanoid } = require("nanoid");
 const { admin, db } = require('./firebase-admin-helper');
 
@@ -80,4 +80,4 @@ exports.handler = async (event) => {
             body: JSON.stringify({ error: "Failed to process request. Check server logs." })
         };
     }
-};*/
+};

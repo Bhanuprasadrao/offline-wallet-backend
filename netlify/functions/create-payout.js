@@ -1,4 +1,4 @@
-const https = require('https');
+/*const https = require('https');
 
 // Get all necessary keys from Netlify's secure environment variables
 const { KEY_ID, KEY_SECRET, RAZORPAYX_ACCOUNT_NUMBER } = process.env;
@@ -107,4 +107,4 @@ exports.handler = async (event) => {
             })
         };
     }
-};
+};*/
