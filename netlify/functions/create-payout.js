@@ -8,7 +8,7 @@ function makeRazorpayRequest(options, payload) {
     return new Promise((resolve, reject) => {
         const auth = "Basic " + Buffer.from(KEY_ID + ":" + KEY_SECRET).toString("base64");
         const req = https.request({
-            hostname: 'api.razorpayx.com',
+            hostname: 'api.razorpay.com',
             ...options,
             headers: {
                 'Authorization': auth,
