@@ -1,4 +1,4 @@
-const { db } = require('./firebase-admin-helper');
+/*const { db } = require('./firebase-admin-helper');
 
 exports.handler = async (event) => {
     
@@ -43,4 +43,4 @@ exports.handler = async (event) => {
         console.error("Firestore read/redirect error:", error);
         return { statusCode: 500, body: "An internal error occurred while processing the link." };
     }
-};
+};*/
